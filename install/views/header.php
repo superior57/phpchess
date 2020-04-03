@@ -13,7 +13,7 @@
 			<table width="100%" border="0" cellspacing="0" cellpadding="0">
 				<tr>
 				<td class="logo" width="320">
-					<h1><a href="http://www.phpchess.com">phpChess-Chess at its best</a></h1>
+					<h1><a href="<?php echo $Root_Path;?>/index.php">phpChess-Chess at its best</a></h1>
 				</td>
 				</tr>
 			</table>

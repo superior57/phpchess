@@ -12,7 +12,7 @@
 <td  id="header"><table width="100%" border="0" cellspacing="0" cellpadding="0">
 <tr>
 <td class="logo" width="320"><h1>
-<a href="http://www.phpchess.com">phpChess-Chess at its best</a></h1></td>
+<a href="<?php echo $Root_Path; ?>/index.php">phpChess-Chess at its best</a></h1></td>
 <td align="right">
 <ul id="topnav">
 <li><a href="<?php echo $Root_Path;?>chess_register.php">Register</a></li>           

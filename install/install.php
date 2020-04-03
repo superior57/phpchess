@@ -298,7 +298,7 @@ if($g_stage == 6)	// Finishing page
 	$g_params['showing_errors'] = $showing;
 	$g_params['check_failed'] = FALSE;
 	if(isset($_POST['check']))
-	{
+	{		
 		$result = check_permissions();
 		if($result['success'])
 		{
@@ -656,6 +656,13 @@ function gen_salt()
 	for($i = 0; $i < 16; $i++)
 		$salt .= $chars[rand(1, 89)];
 	return $salt;
+}
+
+function is_permission($file) {
+	if (isset($file)) {
+		return true;
+	}
+	return false
 }
 	
 ?>

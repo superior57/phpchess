@@ -30,7 +30,7 @@ else
 {
 	$_SESSION['stage'] = $g_stage = 0;
 }
-//echo '<pre style="font-size: 0.7em">'; var_dump($_SESSION); echo '</pre>';
+
 if($g_stage == 0)	// Instructions
 {
 	// User pressed the next button?
@@ -47,14 +47,7 @@ if($g_stage == 1)	// Install validation
 	$errors = "";
 	$g_params['validated'] = FALSE;
 	$g_params['errors'] = '';
-	// // User pressed the next button?
-	// if(isset($_POST['next']))
-	// {
-		// $g_stage = 2;
-		// $_SESSION['stage'] = 2;
-		// unset($_POST['next']);
-	// }
-	// else
+
 	if(isset($_POST['check']))
 	{
 		$result = validate_existing_install();
@@ -120,7 +113,6 @@ if($g_stage == 3)		// Upgrade the database
 		$g_params['upgraded'] = TRUE;
 		$g_params['success'] = $result['success'];
 		$g_params['errors'] = $result['errors'];
-		//echo '<pre>' ; var_dump($result); echo '</pre>';
 	}
 	else	// Determine if db changes are required.
 	{
@@ -150,12 +142,10 @@ if($g_stage == 4)
 		$msg = '';
 		$salt = gen_salt();
 		$result = upgrade_config_file($salt);
-		//var_dump($result);
 		if($result['success'] === FALSE)
 			$g_params['error'] = $result['error'];
 		if($result['upgraded'])
 			$g_params['updated'] = "The config file was updated to include these missing settings: '" . implode("', '", $result['missing']) . "'<br/>";
-		//var_dump($g_params);
 	}
 }
 
@@ -189,6 +179,7 @@ if($g_stage == 6)
 	}
 	elseif(isset($_POST['validate']))
 	{
+		
 		$msg = '';
 		
 		include('Upgrade_Validator.php');
@@ -214,6 +205,7 @@ if($g_stage == 6)
 			echo "FAILED TO CONNECT TO THE DB. ERROR: " . $e->getMessage();
 			exit();
 		}
+		
 		$UV = new Upgrade_Validator($dbh);
 		$result = $UV->validate("$nMajor.$nMinor.$nBuild");
 		if(count($result['errors']) > 0)
@@ -241,63 +233,6 @@ if($g_stage == 7)
 
 include ('./views/layout.php');
 
-
-function validate_existing_install()
-{
-	$result = array('success' => TRUE, 'errors' => '');
-
-	include('../bin/config.php');
-	$host = $conf['database_host'];
-	$db = $conf['database_name'];
-	$user = $conf['database_login'];
-	$pass = $conf['database_pass'];
-	
-	// Is db access possible?
-	try{
-		$dbh = new mysqli($host, $user, $pass, $db);
-		if ($dbh->connect_errno) {
-			$result['success'] = FALSE;
-			$result['errors'] = "FAILED TO CONNECT TO THE DB. ERROR: " . $dbh->connect_error;
-		}
-	} catch (mysqli_sql_exception $e) {
-		// Connection failed: SQLSTATE[HY000] [2005] Unknown MySQL server host 'hmm' (11004)
-		// Connection failed: SQLSTATE[28000] [1045] Access denied for user 'root'@'localhost' (using password: YES)
-		// Connection failed: SQLSTATE[42000] [1049] Unknown database 'blob'
-		preg_match('/SQLSTATE\[\w+\] \[(\w+)\] (.*)/', $e->getMessage(), $matches);
-		$code = $matches[1];
-		if($code == '2005')
-		{
-			$err = "MySQL server host address is incorrect";
-		}
-		elseif($code == '1045')
-		{
-			$err = "Username and/or password are incorrect";
-		}
-		elseif($code == '1049')
-		{
-			$err = "Database name is unknown";
-		}
-		else
-		{
-			$err = 'Connection failed: ' . $e->getMessage();
-		}
-		$result['success'] = FALSE;
-		$result['errors'] = 'Unable to connect to the database. The error is: ' . $err . ' .<br/><br/>Please check the config file to make sure the database values are correct.';
-	
-		return $result;
-	}
-	
-	// Do the db tables exist? Will just check for c4m_admin, game and player and assume the rest is ok.
-	
-	// Does the /bin/installed.txt file exist?
-	if(!file_exists('../bin/installed.txt'))
-	{
-		$result['success'] = FALSE;
-		$result['errors'] = 'Unable to find the file `installed.txt` in the `bin` folder. Cannot progress with the upgrade.';
-	}
-	
-	return $result;
-}
 
 function make_backup()
 {
@@ -423,6 +358,61 @@ function upgrade_config_file($salt)
 	return array('success' => $success, 'upgraded' => TRUE, 'missing' => $missing, 'error' => $error);
 }
 
+function validate_existing_install()
+{
+	$result = array('success' => TRUE, 'errors' => '');
+
+	include('../bin/config.php');
+	$host = $conf['database_host'];
+	$db = $conf['database_name'];
+	$user = $conf['database_login'];
+	$pass = $conf['database_pass'];
+	
+	// Is db access possible?
+	try{
+		$dbh = new mysqli($host, $user, $pass, $db);
+		if ($dbh->connect_errno) {
+			$result['success'] = FALSE;
+			$result['errors'] = "FAILED TO CONNECT TO THE DB. ERROR: " . $dbh->connect_error;
+		}
+	} catch (mysqli_sql_exception $e) {
+		preg_match('/SQLSTATE\[\w+\] \[(\w+)\] (.*)/', $e->getMessage(), $matches);
+		$code = $matches[1];
+		if($code == '2005')
+		{
+			$err = "MySQL server host address is incorrect";
+		}
+		elseif($code == '1045')
+		{
+			$err = "Username and/or password are incorrect";
+		}
+		elseif($code == '1049')
+		{
+			$err = "Database name is unknown";
+		}
+		else
+		{
+			$err = 'Connection failed: ' . $e->getMessage();
+		}
+		$result['success'] = FALSE;
+		$result['errors'] = 'Unable to connect to the database. The error is: ' . $err . ' .<br/><br/>Please check the config file to make sure the database values are correct.';
+	
+		return $result;
+	}
+	
+	// Do the db tables exist? Will just check for c4m_admin, game and player and assume the rest is ok.
+	
+	// Does the /bin/installed.txt file exist?
+	if(!file_exists('../bin/installed.txt'))
+	{
+		$result['success'] = FALSE;
+		$result['errors'] = 'Unable to find the file `installed.txt` in the `bin` folder. Cannot progress with the upgrade.';
+	}
+	
+	return $result;
+}
+
+
 function hash_passwords()
 {
 	include('../bin/config.php');
@@ -534,6 +524,13 @@ function is_skins_default_cells_empty()
 	return !$found;
 }
 
+function detect_error($file, $config){
+	if ( !isset($file) ) {
+		return $config;		
+	}
+	return true;
+}
+
 function work_out_db_changes($file, $config)
 {
 	$contents = file_get_contents($file);
@@ -543,9 +540,6 @@ function work_out_db_changes($file, $config)
 	$old_structure = $dbm->get_db_structure($config['database']);
 	$diff = $dbm->compare_structures($old_structure, $new_struct);
 	return $diff;
-	//var_dump($diff);
-	//apply_db_changes($diff, $config);
-	//exit();
 }
 
 function apply_db_changes($diff, $config)
@@ -571,7 +565,6 @@ function apply_db_changes($diff, $config)
 			$queries[] = "ALTER TABLE `$db`.`$table` " . gen_sql_for_alter($change);
 		}
 	}
-	//echo '<pre>' ; var_dump($queries); echo '</pre>';
 	
 	$dbh = mysqli_connect($config['hostname'], $config['username'], $config['password'], $config['database' ]);
 	$result = array('success' => TRUE, 'errors' => array(), 'torun' => array_merge($adds, $queries), 'upto' => 0);
